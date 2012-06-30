@@ -1,0 +1,78 @@
+import sys
+import os.path
+import time
+from pdfminer.processETDs import *
+from pdfminer.pdfparser import PDFParser, PDFDocument
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+from pdfminer.pdfdevice import PDFDevice, TagExtractor, TagExtractor2Memory
+from pdfminer.converter import TextConverter, XMLConverter
+from pdfminer.layout import LAParams
+
+def makeOutfileName():
+    timeID=str(time.time())
+    name="C:\\Users\\srobbins\\Desktop\\taggedScriptOutput"+timeID+".txt"
+    return name
+    
+def getPDFDir(directory, outfile):
+    count=0
+    misscount=0
+    
+    for filename in os.listdir(directory):
+        if filename.endswith('.pdf') or filename.endswith('.PDF'):
+            filepath=directory+'\\'+filename
+            result=getPDFInfo(filepath, outfile)
+            misscount+=result
+            count+=1
+    return str(misscount)+'/'+str(count)
+
+
+def getPDFInfo(filename, outfile):
+    # Open a PDF file. SR: add some assignments to use textconverter
+    fp = open(filename, 'rb')
+    outfp=file(outfile, 'a')
+    #outfp=sys.stdout#use this to print to screen instead of file 
+    codec = 'utf-8'
+    laparams = LAParams()
+    # Create a PDF parser object associated with the file object.
+    parser = PDFParser(fp)
+    # Create a PDF document object that stores the document structure.
+    doc = PDFDocument()
+    # Connect the parser and document objects.
+    parser.set_document(doc)
+    doc.set_parser(parser)
+    # Supply the password for initialization.
+    # (If no password is set, give an empty string.)
+    doc.initialize('')
+    # Check if the document allows text extraction. If not, abort.
+    if not doc.is_extractable:
+        raise PDFTextExtractionNotAllowed
+    # Create a PDF resource manager object that stores shared resources.
+    rsrcmgr = PDFResourceManager()
+    # Create a PDF device object.
+    # device = PDFDevice(rsrcmgr)
+    # SR: I overrode this in hopes that I could use the text
+    #device = TextConverter(rsrcmgr, outfp, codec=codec, laparams=laparams)
+    device = TagExtractor2Memory(rsrcmgr, codec=codec)
+    #device = XMLConverter(rsrcmgr, outfp, codec=codec, laparams=laparams, outdir="C:\\Users\\srobbins\\Desktop\\")
+    # Create a PDF interpreter object.
+    interpreter = PDFPageInterpreter(rsrcmgr, device)
+    # Process each page contained in the document.
+    outfp.write(filename[-11:-4]+"\n")
+    PDFInfo=''
+    for i,page in enumerate(doc.get_pages()):
+        #added this line as test
+        PDFInfo+=interpreter.process_page_to_mem(page)
+        if i==10:
+            deptInfo=processETDStrings(PDFInfo)
+            if deptInfo=="no match":
+                count=1
+            else:
+                count=0
+            outfp.write(deptInfo+'\n')
+            return count 
+
+
+
+outfile=makeOutfileName()
+count=getPDFDir(r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro1\Illinois_1_2", outfile)
+print count
