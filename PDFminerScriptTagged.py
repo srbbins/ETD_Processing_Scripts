@@ -13,20 +13,20 @@ def makeOutfileName():
     name="C:\\Users\\srobbins\\Desktop\\taggedScriptOutput"+timeID+".txt"
     return name
     
-def getPDFDir(directory, outfile):
+def getPDFDir(directory, outfile, thisTrainingData):
     count=0
     misscount=0
     
     for filename in os.listdir(directory):
         if filename.endswith('.pdf') or filename.endswith('.PDF'):
             filepath=directory+'\\'+filename
-            result=getPDFInfo(filepath, outfile)
+            result=getPDFInfo(filepath, outfile, thisTrainingData)
             misscount+=result
             count+=1
     return str(misscount)+'/'+str(count)
 
 
-def getPDFInfo(filename, outfile):
+def getPDFInfo(filename, outfile, thisTrainingData):
     # Open a PDF file. SR: add some assignments to use textconverter
     fp = open(filename, 'rb')
     outfp=file(outfile, 'a')
@@ -57,22 +57,27 @@ def getPDFInfo(filename, outfile):
     # Create a PDF interpreter object.
     interpreter = PDFPageInterpreter(rsrcmgr, device)
     # Process each page contained in the document.
-    outfp.write(filename[-11:-4]+"\n")
+    #outfp.write(filename[-11:-4]+"\n")
+    print filename[-11:-4]+"\n"#uncomment for testing
     PDFInfo=''
     for i,page in enumerate(doc.get_pages()):
         #added this line as test
         PDFInfo+=interpreter.process_page_to_mem(page)
-        if i==10:
-            deptInfo=processETDStrings(PDFInfo)
+        if i==2:
+            deptInfo=thisTrainingData.processETDStrings(PDFInfo)
             if deptInfo=="no match":
                 count=1
             else:
                 count=0
-            outfp.write(deptInfo+'\n')
+            #outfp.write(deptInfo+'\n')
+            #for testing purposes: instead of writing to file, uncomment following line:
+            print deptInfo+'\n'
+            print thisTrainingData.trainingDataDict
             return count 
 
 
 
 outfile=makeOutfileName()
-count=getPDFDir(r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro1\Illinois_1_2", outfile)
+thisTrainingData=TrainingData()
+count=getPDFDir(r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro1\Illinois_1_2", outfile, thisTrainingData)
 print count
