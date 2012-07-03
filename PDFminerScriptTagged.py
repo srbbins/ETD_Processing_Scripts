@@ -58,7 +58,8 @@ def getPDFInfo(filename, outfile, thisTrainingData):
     interpreter = PDFPageInterpreter(rsrcmgr, device)
     # Process each page contained in the document.
     #outfp.write(filename[-11:-4]+"\n")
-    print filename[-11:-4]+"\n"#uncomment for testing
+    #print filename[-11:-4]+"\n"#uncomment for testing
+    
     PDFInfo=''
     for i,page in enumerate(doc.get_pages()):
         #added this line as test
@@ -71,13 +72,21 @@ def getPDFInfo(filename, outfile, thisTrainingData):
                 count=0
             #outfp.write(deptInfo+'\n')
             #for testing purposes: instead of writing to file, uncomment following line:
-            print deptInfo+'\n'
-            print thisTrainingData.trainingDataDict
-            return count 
+            #print deptInfo+'\n'
+            fileDict[filename[-11:-4]]=deptInfo
+            return count
+    
+    
 
 
+fileDict={}
 
 outfile=makeOutfileName()
 thisTrainingData=TrainingData()
 count=getPDFDir(r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro1\Illinois_1_2", outfile, thisTrainingData)
+thisTrainingData.cleanTrainingData()
+IterationTwo=metadataFinder(thisTrainingData, r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro1\Illinois_1_2", fileDict)
+fileDict=IterationTwo.testString()
+print fileDict
+print thisTrainingData.trainingDataDict
 print count
