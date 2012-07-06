@@ -21,15 +21,13 @@ def getPDFDir(directory, outfile, thisTrainingData):
         if filename.endswith('.pdf') or filename.endswith('.PDF'):
             filepath=directory+'\\'+filename
             result=getPDFInfo(filepath, outfile, thisTrainingData)
-            misscount+=result
-            count+=1
-    return str(misscount)+'/'+str(count)
+    return
 
 
 def getPDFInfo(filename, outfile, thisTrainingData):
     # Open a PDF file. SR: add some assignments to use textconverter
     fp = open(filename, 'rb')
-    outfp=file(outfile, 'a')
+    #outfp=file(outfile, 'a')
     #outfp=sys.stdout#use this to print to screen instead of file 
     codec = 'utf-8'
     laparams = LAParams()
@@ -66,15 +64,11 @@ def getPDFInfo(filename, outfile, thisTrainingData):
         PDFInfo+=interpreter.process_page_to_mem(page)
         if i==2:
             deptInfo=thisTrainingData.processETDStrings(PDFInfo)
-            if deptInfo=="no match":
-                count=1
-            else:
-                count=0
             #outfp.write(deptInfo+'\n')
             #for testing purposes: instead of writing to file, uncomment following line:
             #print deptInfo+'\n'
             fileDict[filename[-11:-4]]=deptInfo
-            return count
+            return
     
     
 
@@ -84,9 +78,20 @@ fileDict={}
 outfile=makeOutfileName()
 thisTrainingData=TrainingData()
 count=getPDFDir(r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro1\Illinois_1_2", outfile, thisTrainingData)
+print fileDict
 thisTrainingData.cleanTrainingData()
+print fileDict
 IterationTwo=metadataFinder(thisTrainingData, r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro1\Illinois_1_2", fileDict)
 fileDict=IterationTwo.testString()
 print fileDict
-print thisTrainingData.trainingDataDict
-print count
+count=0.0
+missCount=0.0
+for key in fileDict.keys():
+    count+=1.0
+    if fileDict[key]=="no match":
+         missCount+=1.0
+
+print missCount/count 
+
+print IterationTwo.trainingDataDict
+

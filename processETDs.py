@@ -75,6 +75,7 @@ class TrainingData(object):
     def __init__(self):
         self.trainingDataDict={}
         self.fileDict={}
+        self.wordCalc=LevenshteinCalculator()
        
     def detokenizeString(self, tokenList):
         detokenizedString=''
@@ -91,10 +92,10 @@ class TrainingData(object):
         for i, token in enumerate(tokenList):
             if i+tokenCountForBeginString<len(tokenList):
                 testString=self.detokenizeString(tokenList[i:i+tokenCountForBeginString]).strip()
-                if testString.lower()==beginString.lower():
+                if self.wordCalc.getEditDistance(testString.lower(), beginString.lower())<=2:
                     markOne=i+tokenCountForBeginString
                     writeToken=True
-            if writeToken==True and token.lower()==endString.lower() and i>markOne:
+            if writeToken==True and self.wordCalc.getEditDistance(token.lower(), endString.lower())<=2 and i>markOne:
                 markTwo=i
                 workingTokens=[]
                 workingTokenList=tokenList[markOne:markTwo]
@@ -103,7 +104,7 @@ class TrainingData(object):
                 return workingTokens
         return ''
 
-    def cleanTrainingData(self):
+    def cleanTrainingData(self, fileDict):
         for entry in self.trainingDataDict.keys():
             if not entry[0].isalpha():
                 count=self.trainingDataDict[entry]
@@ -127,6 +128,17 @@ class TrainingData(object):
                         self.trainingDataDict[key]+=self.trainingDataDict[entry]
                         break
                 del self.trainingDataDict[entry]
+            for unlikelyKey in self.trainingDataDict.keys():
+                if self.trainingDataDict[unlikelyKey]==1:
+                    candidateDict={}
+                    for likelyKey in self.trainingDataDict.keys():
+                        distance=self.wordCalc.getEditDistance(unlikelyKey, likelyKey)
+                        if likelyKey>1 and distance<4:
+                           candidateDict[likelyKey]=distance
+                    if candidataDict!={}:
+                        self.trainingDataDict[min(candidateDict, key=trainingDataDict.get)]+=1
+                        del self.trainingDataDict[unlikelyKey]
+                    
     #if number of tokens greater than five try to match first words to other word in dict
     #if string contains undesireable characters try to match to dict, if characters occur at ends of tokens simply kick them out
 
@@ -160,14 +172,8 @@ class metadataFinder(object):
         self.trainingDataDict=someTrainingData.trainingDataDict
         self.filePath=filePath
         self.fileDict=fileDict
-
-##    def edits1(self, word):#code adapted from Peter Norvig's code, found@ http://norvig.com/spell-correct.html 7/2/2012
-##        splits     = [(word[:i], word[i:]) for i in range(len(word) + 1)]
-##        deletes    = [a + b[1:] for a, b in splits if b]
-##        transposes = [a + b[1] + b[0] + b[2:] for a, b in splits if len(b)>1]
-##        replaces   = [a + c + b[1:] for a, b in splits for c in alphabet if b]
-##        inserts    = [a + c + b     for a, b in splits for c in alphabet]
-##        return set(deletes + transposes + replaces + inserts)
+        self.wordCalc=LevenshteinCalculator()
+        self.toolBox=StringUtils()
 
     def getPDFInfoForTestString(self, filename):
         fp = open(filename, 'rb') 
@@ -192,28 +198,75 @@ class metadataFinder(object):
                 return PDFInfo
     
     def testString(self):
-        for key in self.fileDict.keys():
-            if self.fileDict[key]=='no match':
+        for fileKey in self.fileDict.keys():
+            if self.fileDict[fileKey]=='no match':
                 candidates=[]
-                PDFText=self.getPDFInfoForTestString(self.filePath+'\\'+key+'.pdf')
-                for word in PDFText.split():
+                PDFText=self.getPDFInfoForTestString(self.filePath+'\\'+fileKey+'.pdf')
+                PDFTextTokens=PDFText.split()
+                for i, word in enumerate(PDFTextTokens):
                     if word not in STOPLIST:
-                        if word in self.trainingDataDict.keys():
-                            self.fileDict[key]=word
+                        for key in self.trainingDataDict.keys():
+                            trainingString=key.lower().split()
+                            if self.wordCalc.getEditDistance(trainingString[0], word)<=2:
+                                wordTest=self.toolBox.detokenizeString(PDFTextTokens[i:i+len(trainingString)])
+                                if self.wordCalc.getEditDistance(wordTest, key)<=4 and self.trainingDataDict[key]>1:
+                                    self.fileDict[fileKey]=key
+                                    print fileKey+':'+key
+                                    self.trainingDataDict[key]+=1                                                   
         return self.fileDict
-                        #for keys in self.trainingData:
                             
+
+
+class LevenshteinCalculator(object):
+    def __init__(self, word1, word2):
+        self.distance=getEditDistance(word1, word2)
+
+    def __init__(self):
+        self.distance=None
+
+    def getEditDistance(self, word1, word2):
+        distanceMatrix=[]
+        for i in range(len(word1)+1):
+            distanceMatrix.append([i])
+        for j in range(1,(len(word2))+1):
+            distanceMatrix[0].append(j)
+        for i in range(1, (len(word1))+1):
+            for j in range(1,(len(word2))+1):
+                if word1[i-1]==word2[j-1]:
+                    cost=0
+                else:
+                    cost=1
+                distanceMatrix[i].append(min((distanceMatrix[i-1][j]+1,
+                                              distanceMatrix[i][j-1]+1,
+                                              distanceMatrix[i-1][j-1]+cost)))            
+        return distanceMatrix[len(word1)][len(word2)]
+
+
+class StringUtils(object):
+
+    def detokenizeString(self, tokenList):
+        detokenizedString=''
+        for i, token in enumerate(tokenList):
+                if i==len(tokenList)-1:
+                    detokenizedString+=token.lower()
+                else:
+                    detokenizedString+=token.lower()+' '
+        return detokenizedString
+
+    
+   
+            
+        
                     
-    def getEditDistance(self, word1, word2):pass
+                    
+                
+                
+            
+        
+        
+        
+        
     
-        
-        
-        
     
-    #determine based on some easy similarity metrics whether it's worth checking the edit1 data
-    #use stoplist
-    #Don't use edit1. to get the edit distance between two strings create two containers, each the length of the longer string. Place the longer string in one of the containers.
-    #Then with the smaller string, place characters at the indexes where they match, keep the cahracters that don't match in the order that they were
-    #in the original word. How many steps does it take to move the remaining chars from
-    #the longer word over this is the edit distance.
+   
     
