@@ -1,4 +1,5 @@
 #!/usr/bin/env python2
+import math
 import sys
 import os.path
 from pdfminer.pdfparser import PDFParser, PDFDocument
@@ -122,22 +123,58 @@ class TrainingData(object):
                     self.trainingDataDict[entry]+=count
                 else:
                     self.trainingDataDict[entry]=count
-            if len(entry.split())>5:
+            if len(entry.split())>3:
                 for key in self.trainingDataDict.keys():
                     if key==entry[:len(key)]:
                         self.trainingDataDict[key]+=self.trainingDataDict[entry]
                         break
                 del self.trainingDataDict[entry]
-            for unlikelyKey in self.trainingDataDict.keys():
-                if self.trainingDataDict[unlikelyKey]==1:
-                    candidateDict={}
-                    for likelyKey in self.trainingDataDict.keys():
-                        distance=self.wordCalc.getEditDistance(unlikelyKey, likelyKey)
-                        if likelyKey>1 and distance<4:
-                           candidateDict[likelyKey]=distance
-                    if candidataDict!={}:
-                        self.trainingDataDict[min(candidateDict, key=trainingDataDict.get)]+=1
-                        del self.trainingDataDict[unlikelyKey]
+        for entry in self.trainingDataDict.keys():
+            newTokenList=[]
+            for token in entry.split():
+                if token.isalpha():
+                    newTokenList.append(token)
+            if newTokenList!=[]:
+                newEntry=self.detokenizeString(newTokenList)
+                if newEntry!=entry:
+                    print 'newEntry: '+ newEntry + ' does not equal entry: ' + entry
+                    if newEntry not in self.trainingDataDict.keys():
+                            self.trainingDataDict[newEntry]=0
+                    for key in fileDict.keys():
+                        if fileDict[key]==entry:
+                            fileDict[key]=newEntry
+                            self.trainingDataDict[newEntry]+=1
+                            print key + ' changed from ' + entry + 'to' + newEntry
+                    del self.trainingDataDict[newEntry]
+                        
+                        
+                
+                
+        for unlikelyKey in self.trainingDataDict.keys():
+            if self.trainingDataDict[unlikelyKey]==1:
+                candidateDict={}
+                for likelyKey in self.trainingDataDict.keys():
+                    distance=self.wordCalc.getEditDistance(unlikelyKey, likelyKey)
+                    if self.trainingDataDict[likelyKey]>1 and distance<=4:
+                       candidateDict[likelyKey]=distance
+                if candidateDict!={}:
+                    self.trainingDataDict[min(candidateDict, key=candidateDict.get)]+=1
+                    del self.trainingDataDict[unlikelyKey]
+        #print str(self.trainingDataDict) + '\n'
+        for key in fileDict.keys():
+            if fileDict[key] not in self.trainingDataDict.keys() and fileDict[key]!='no match':
+                print fileDict[key]+'not found'
+                candidateDict={}
+                for likelyKey in self.trainingDataDict.keys():
+                    distance=self.wordCalc.getEditDistance(fileDict[key], likelyKey)
+                    if distance<4:
+                        candidateDict[likelyKey]=distance
+                print 'candidates:'+ str(candidateDict)+'\n'
+                if candidateDict!={}:
+                    fileDict[key]= min(candidateDict, key=candidateDict.get)
+                    print key+': '+fileDict[key]
+        return fileDict
+                    
                     
     #if number of tokens greater than five try to match first words to other word in dict
     #if string contains undesireable characters try to match to dict, if characters occur at ends of tokens simply kick them out
@@ -194,25 +231,54 @@ class metadataFinder(object):
         PDFInfo=''
         for i,page in enumerate(doc.get_pages()):
             PDFInfo+=interpreter.process_page_to_mem(page)
-            if i==2:
+            if i==10:
                 return PDFInfo
+
+    def checkForAlternateString(self, alternateString, explicitMeaning):
+        for fileKey in self.fileDict.keys():
+            if self.fileDict[fileKey]=='no match':
+                PDFText=self.getPDFInfoForTestString(self.filePath+'\\'+fileKey+'.pdf')
+                tokenCountForAlternate=len(alternateString.split())
+                tokenList=PDFText.split()
+                for i, token in enumerate(PDFText):
+                    if i+tokenCountForAlternate<len(tokenList):#test for end of PDFtext
+                        testString=self.toolBox.detokenizeString(tokenList[i:i+tokenCountForAlternate]).strip()
+                        if self.wordCalc.getEditDistance(testString.lower(), alternateString.lower())<=3:
+                            markOne=i+tokenCountForAlternate
+                            self.fileDict[fileKey]=explicitMeaning
+                            print fileKey+': '+self.fileDict[fileKey]
+        
+
     
     def testString(self):
         for fileKey in self.fileDict.keys():
             if self.fileDict[fileKey]=='no match':
-                candidates=[]
+                candidates={}
                 PDFText=self.getPDFInfoForTestString(self.filePath+'\\'+fileKey+'.pdf')
                 PDFTextTokens=PDFText.split()
                 for i, word in enumerate(PDFTextTokens):
                     if word not in STOPLIST:
                         for key in self.trainingDataDict.keys():
                             trainingString=key.lower().split()
-                            if self.wordCalc.getEditDistance(trainingString[0], word)<=2:
+                            if self.wordCalc.getEditDistance(trainingString[0], word)<=5:
                                 wordTest=self.toolBox.detokenizeString(PDFTextTokens[i:i+len(trainingString)])
-                                if self.wordCalc.getEditDistance(wordTest, key)<=4 and self.trainingDataDict[key]>1:
-                                    self.fileDict[fileKey]=key
-                                    print fileKey+':'+key
-                                    self.trainingDataDict[key]+=1                                                   
+                                distance=self.wordCalc.getEditDistance(wordTest, key)
+                                if distance<=6 and self.trainingDataDict[key]>1:
+                                    candidateRankVar=0.0
+                                    frequency=0.0
+                                    if key in candidates.keys():
+                                        frequency+=1.0
+                                    candidateRankVar=(frequency*math.log(float(self.trainingDataDict[key])))/(distance+1.0)
+                                    candidates[key]=candidateRankVar
+                print candidates
+                if candidates != {}:
+                    maxFrequency=max(candidates, key=candidates.get)
+                else: maxFrequency='no match'
+                
+                self.fileDict[fileKey]=maxFrequency+'(best guess)'
+                print fileKey+': '+maxFrequency
+                if maxFrequency!='no match':
+                    self.trainingDataDict[maxFrequency]+=1                                                 
         return self.fileDict
                             
 

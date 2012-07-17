@@ -21,7 +21,7 @@ def getPDFDir(directory, outfile, thisTrainingData):
         if filename.endswith('.pdf') or filename.endswith('.PDF'):
             filepath=directory+'\\'+filename
             result=getPDFInfo(filepath, outfile, thisTrainingData)
-    return
+    return 
 
 
 def getPDFInfo(filename, outfile, thisTrainingData):
@@ -77,13 +77,17 @@ fileDict={}
 
 outfile=makeOutfileName()
 thisTrainingData=TrainingData()
-count=getPDFDir(r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro1\Illinois_1_2", outfile, thisTrainingData)
+count=getPDFDir(r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro3\Illinois_3_2", outfile, thisTrainingData)
 print fileDict
-thisTrainingData.cleanTrainingData()
+print thisTrainingData.trainingDataDict
+fileDict=thisTrainingData.cleanTrainingData(fileDict)
 print fileDict
-IterationTwo=metadataFinder(thisTrainingData, r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro1\Illinois_1_2", fileDict)
+
+#iteractionTwo=
+IterationTwo=metadataFinder(thisTrainingData, r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro3\Illinois_3_2", fileDict)
+IterationTwo.checkForAlternateString('doctor of education', 'education')
 fileDict=IterationTwo.testString()
-print fileDict
+print IterationTwo.fileDict
 count=0.0
 missCount=0.0
 for key in fileDict.keys():
