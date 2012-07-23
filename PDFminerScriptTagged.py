@@ -62,7 +62,7 @@ def getPDFInfo(filename, outfile, thisTrainingData):
     for i,page in enumerate(doc.get_pages()):
         #added this line as test
         PDFInfo+=interpreter.process_page_to_mem(page)
-        if i==2:
+        if i==10:
             deptInfo=thisTrainingData.processETDStrings(PDFInfo)
             #outfp.write(deptInfo+'\n')
             #for testing purposes: instead of writing to file, uncomment following line:
@@ -77,15 +77,18 @@ fileDict={}
 
 outfile=makeOutfileName()
 thisTrainingData=TrainingData()
-count=getPDFDir(r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro3\Illinois_3_2", outfile, thisTrainingData)
+count=getPDFDir(r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro5\Illinois_5_2", outfile, thisTrainingData)
 print fileDict
 print thisTrainingData.trainingDataDict
 fileDict=thisTrainingData.cleanTrainingData(fileDict)
 print fileDict
 
 #iteractionTwo=
-IterationTwo=metadataFinder(thisTrainingData, r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro3\Illinois_3_2", fileDict)
+IterationTwo=metadataFinder(thisTrainingData, r"\\libgrsurya\IDEALS_ETDS\ProQuestDigitization\Illinois_Retro5\Illinois_5_2", fileDict)
 IterationTwo.checkForAlternateString('doctor of education', 'education')
+IterationTwo.checkForAlternateString('doctor of musical arts', 'music')
+
+IterationTwo.getTextBetweenTwoStrings('submitted', '</page>')
 fileDict=IterationTwo.testString()
 print IterationTwo.fileDict
 count=0.0
