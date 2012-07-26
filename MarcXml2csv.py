@@ -62,7 +62,7 @@ def incrementSeq(oldIdString, xmlDict):
 def buildDictList(readFile):
     #Builds a list of dictionarys for processing MarcXML.
     #Each individual record becomes a dictionary on the list.
-    #Each Xml elements content will be mapped to a list containing
+    #Each XML element's content will be mapped to a list containing
     #information contained in the "tag", "ind1," "ind2," and "code"
     #attributes of the datafield and subfield tags, as well as a fifth field to
     #identify multiple entries.
@@ -119,7 +119,7 @@ def buildHeader(dictList):
     return header
 
 def buildLines(header, dictList):
-    #build lines (excepting the header) to written to csv and return as a
+    #build lines (excepting the header) to be written to csv and return as a
     #two dimensional array of rows.  
     csvLines=[]
     for dict in dictList:

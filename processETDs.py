@@ -188,7 +188,7 @@ class TrainingData(object):
                 self.trainingDataDict[workingTokens]=1
         return
         
-    def processETDStrings(self, text):
+    def processETDStrings(self, text): 
         tokens=text.split()
         workingTokens=self.detokenizeString(self.getTextBetweenTwoStrings(tokens, "doctor of philosophy in", "in"))
         if workingTokens=='':
