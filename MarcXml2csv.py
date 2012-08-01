@@ -158,9 +158,9 @@ def writeCsvFile(writeFile, csvLines, header):
 
 def main():
     #marcData=buildDictList('/home/seth/Desktop/Illinois_Retro1_MARCDATA.xml')
-    marcData=buildDictList('C:\Users\srobbins\Desktop\Illinois_Retro3_MARCDATA.xml')
+    marcData=buildDictList('\\\\libgrsurya\\IDEALS_ETDS\\ETD_Metadata_Files\\Retro5_Metadata\\Illinois_Retro5_MARCDATA.xml')
     header=buildHeader(marcData)
     lines=buildLines(header, marcData)
     #writeCsvFile('/home/seth/Desktop/Illinois_Retro1_test_MARCDATA.csv', lines, header)
-    writeCsvFile('C:\Users\srobbins\Desktop\Illinois_Retro3_MARCDATA.csv', lines, header)
+    writeCsvFile('\\\\libgrsurya\\IDEALS_ETDS\\ETD_Metadata_Files\\Retro5_Metadata\\Illinois_Retro5_MARCDATA.csv', lines, header)
     
