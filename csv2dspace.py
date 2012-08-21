@@ -33,7 +33,7 @@ def add_one_field(parent, dcField, text):
     return node
 
 def makeOutFileName(outFileDir, i, name):
-    name=outFileDir+name+"_"+str(i)+".xml"
+    name=outFileDir+"\\"+name+".xml"
     return name
 
 def add_dc_nodes(root, row):
@@ -68,8 +68,13 @@ def test(inFileName, outFileDir):
     file=open(inFileName, 'r')
     reader=csv.DictReader(file)
     for i, row in enumerate(reader):
-        dcOutFileName=makeOutFileName(outFileDir, i, 'dublin_core')
-        thesisOutFileName=makeOutFileName(outFileDir, i, 'metadata_thesis')
+        if not (os.access(outFileDir, os.F_OK)):
+            os.mkdir(outFileDir)
+        newOutFileDir=outFileDir+"\\"+row["001"][3:]    
+        if not (os.access(newOutFileDir, os.F_OK)):
+            os.mkdir(newOutFileDir)
+        dcOutFileName=makeOutFileName(newOutFileDir, i, 'dublin_core')
+        thesisOutFileName=makeOutFileName(newOutFileDir, i, 'metadata_thesis')
         dcRoot=Etree.Element("dublin_core")
         thesisRoot=Etree.Element("dublin_core")
         dcDoc=Etree.ElementTree(dcRoot)
@@ -80,8 +85,6 @@ def test(inFileName, outFileDir):
         add_thesis_nodes(thesisRoot, row)
         dcDoc.write(dcOutFileName)
         thesisDoc.write(thesisOutFileName)
-        if i==10:
-            break
 
 def showNode(node):
     if node.nodeType == Node.ELEMENT_NODE:
