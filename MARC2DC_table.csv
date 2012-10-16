@@ -1,0 +1,62 @@
+0,leader
+1,control number
+5,timestamp of last transaction
+8,Marc general info code
+020- - -a-0,ISBN
+035- - -a-0,system control number
+040- - -a-0,Cataloging Source
+040- - -c-0,Cataloging Source
+100-1- -a-0,dc.creator
+245-1-0-a-0,dc.title
+245-1-2-a-0,dc.title
+245-1-3-a-0,dc.title
+245-1-4-a-0,dc.title
+300- - -a-0,physical description (pp.)
+500- - -a-0,dc.description?source
+500- - -a-1,dc.contributor.advisor
+500- - -a-2,dc.description
+502- - -a-0,"thesis.degree.name, thesis.degree.grantor"
+520- - -a-0,dc.description.abstract
+520- - -a-1,dc.description.abstract
+520- - -a-10,dc.description.abstract
+520- - -a-2,dc.description.abstract
+520- - -a-3,dc.description.abstract
+520- - -a-4,dc.description.abstract
+520- - -a-5,dc.description.abstract
+520- - -a-6,dc.description.abstract
+520- - -a-7,dc.description.abstract
+520- - -a-8,dc.description.abstract
+520- - -a-9,dc.description.abstract
+590- - -a-0,school code
+650- -4-a-0,dc.subject
+650- -4-a-1,dc.subject
+650- -4-a-2,dc.subject
+650- -4-a-3,dc.subject
+650- -4-a-4,dc.subject
+650- -4-a-5,dc.subject
+690- - -a-0,Local Subject Added Entry-Topical Term
+690- - -a-1,Local Subject Added Entry-Topical Term
+690- - -a-2,Local Subject Added Entry-Topical Term
+690- - -a-3,Local Subject Added Entry-Topical Term
+690- - -a-4,Local Subject Added Entry-Topical Term
+690- - -a-5,Local Subject Added Entry-Topical Term
+700-1-0-a-0,dc.contributor.? (only used in one diss)
+700-1-0-a-1,dc.contributor.? (only used in one diss)
+700-1-0-a-2,dc.contributor.? (only used in one diss)
+700-1-0-e-0,dc.contributor.? (only used in one diss)
+700-1-0-e-1,dc.contributor.? (only used in one diss)
+700-1-0-e-2,dc.contributor.? (only used in one diss)
+710-2-0-a-0,thesis.degree.grantor
+773-0- -g-0,host item code
+773-0- -t-0,diss. Abs. int.
+790- - -a-0,?
+790-1-0-a-0,
+790-1-0-a-1,
+790-1-0-a-2,
+790-1-0-e-0,
+790-1-0-e-1,
+790-1-0-e-2,
+791- - -a-0,thesis.degree.name 
+792- - -a-0,year published
+793- - -a-0,dc.language.iso
+department name,thesis.degree.program
