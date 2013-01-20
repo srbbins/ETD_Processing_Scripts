@@ -2,15 +2,15 @@ import csv
 import sys
 import os.path
 
-class marcTable:
+class MarcTable:
     
     def __init__(self, fileName):
-        if fileName[-3:].lower()=csv:
-            self.table=makeCsvDict(fileName)
+        if fileName[-3:].lower()=="csv":
+            self.table=self.makeCsvDict(fileName)
             
             
-    def makeCsvDict():
-        mapFile=open(r'C:\Users\srobbins\Desktop\OutPut\Illinois_Retro1_MARCDATA.csv', 'rb')
+    def makeCsvDict(self, fileName):
+        mapFile=open(fileName, 'rb')
         mapDict=csv.DictReader(mapFile)
         csvList=[]
         for row in mapDict:
@@ -18,4 +18,5 @@ class marcTable:
             for i in mapDict.fieldnames:
                 rowDict[i]=row[i]
             csvList.append(rowDict)
+        return csvList 
             
