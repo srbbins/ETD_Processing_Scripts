@@ -2,17 +2,15 @@ import sys
 import os.path
 import time
 import math
-from pdfminer.pdfparser import PDFParser
-from pdfminer.pdfdocument import PDFDocument
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.pdfdevice import PDFDevice, TagExtractor2Memory
-from pdfminer.converter import TextConverter, XMLConverter
-from pdfminer.layout import LAParams
-from pdfminer.pdfpage import PDFPage
+import subprocess
+import etd_string_utils
+
+PDFMINER_DIR = "/Users/srobbins/Projects/pdfminer"
+PDFMINER_SCRIPT = os.path.join(PDFMINER_DIR, "tools", "pdf2txt.py")
 
 class ProcessETDs(object):
     def __init__(self, directory):
-        self.toolBox=StringUtils()
+        self.toolBox=etd_string_utils
         self.fileDict={}
         self.trainingDataDict={}
         self.filePath=directory
@@ -24,7 +22,6 @@ class ProcessETDs(object):
 ##        self.trainingDataDict=TrainingDataDict
 
     def seedFileDict(self, directory, seedText):
-    
         for filename in os.listdir(directory):
             if filename.endswith('.pdf') or filename.endswith('.PDF'):
                 filepath=directory+'/'+filename
@@ -32,24 +29,14 @@ class ProcessETDs(object):
         return 
 
     def getPDFInfo(self, filename, pageCount=10):
-        fp = open(filename, 'rb') 
-        codec = 'utf-8'
-        laparams = LAParams()
-        parser = PDFParser(fp)
-        doc = PDFDocument(parser)
-        parser.set_document(doc)
-        if not doc.is_extractable:
-            raise PDFTextExtractionNotAllowed
-        rsrcmgr = PDFResourceManager()
-        device = TagExtractor2Memory(rsrcmgr, codec=codec)
-        interpreter = PDFPageInterpreter(rsrcmgr, device)
-        #outfp.write(filename[-11:-4]+"\n")
-        #print filename[-11:-4]+"\n"#uncomment for testing
-        PDFInfo=''
-        for page in PDFPage.create_pages(doc):
-            PDFInfo+=interpreter.process_page_to_mem(page)
-            if i==pageCount:
-                return PDFInfo
+        return subprocess.check_output([PDFMINER_SCRIPT, "-m "+str(pageCount), filename])
+        
+                
+    def getPDFInfoForFile(self):
+        print self.filePath
+        print self.fileDict.keys()[0]
+    	return self.getPDFInfo(os.path.join(self.filePath, self.fileDict.keys()[0]+'.pdf'))
+        
 
     def getTextBetweenTwoStrings(self, beginString, endString, seedText, tolerance=2):#retrieves text between first instance of two strings. Strings do not have to be exact but are matched with a tolerance (based on levenshtein distance)
         tokenCountForBeginString=len(beginString.split())
@@ -83,7 +70,8 @@ class ProcessETDs(object):
                             print fileKey+' is '+self.fileDict[fileKey]
                             break
 
-    def checkForAlternateString(self, alternateString, explicitMeaning, seedText='no match'):#seeks a string that gives away department info and assigns that department name to file.
+    def checkForAlternateString(self, alternateString, explicitMeaning, seedText='no match', tolerance = 3):#seeks a string that gives away department info and assigns that department name to file.
+        print alternateString
         for fileKey in self.fileDict.keys():
             if self.fileDict[fileKey]==seedText:
                 PDFText=self.getPDFInfo(self.filePath+'/'+fileKey+'.pdf')
@@ -92,10 +80,10 @@ class ProcessETDs(object):
                 for i, token in enumerate(PDFText):
                     if i+tokenCountForAlternate<len(tokenList):#test for end of PDFtext
                         testString=self.toolBox.detokenizeString(tokenList[i:i+tokenCountForAlternate]).strip()
-                        if self.toolBox.getEditDistance(testString.lower(), alternateString.lower())<=3:
+                        if self.toolBox.getEditDistance(testString.lower(), alternateString.lower())<=tolerance:
                             markOne=i+tokenCountForAlternate
                             self.fileDict[fileKey]=explicitMeaning
-                            #print fileKey+': '+self.fileDict[fileKey]
+                            print fileKey+': '+self.fileDict[fileKey]
 
     def cleanTrainingData(self, seedText):#cleans fileDict and trainingDataDict; a number of these steps could usefully be factored out.
         for entry in self.trainingDataDict.keys():
@@ -116,24 +104,6 @@ class ProcessETDs(object):
                             newEntryList.append(newEntry[i])
                         self.fileDict[fileKey]=self.toolBox.detokenizeString(newEntryList) 
                 del self.trainingDataDict[entry]
-        for entry in self.trainingDataDict.keys():
-            if not entry[0].isalpha():
-                count=self.trainingDataDict[entry]
-                del self.trainingDataDict[entry]
-                entry=entry[1:]
-                if entry in self.trainingDataDict.keys():
-                    entry+=count
-                else:
-                    self.trainingDataDict[entry]=count
-            if not entry[-1].isalpha():
-                count=self.trainingDataDict[entry]
-                del self.trainingDataDict[entry]
-                entry=entry[:-1]
-                if entry in self.trainingDataDict.keys():
-                    self.trainingDataDict[entry]+=count
-                else:
-                    self.trainingDataDict[entry]=count
-                
                 
         for unlikelyKey in self.trainingDataDict.keys():
             if self.trainingDataDict[unlikelyKey]==1:
@@ -142,9 +112,9 @@ class ProcessETDs(object):
                     distance=self.toolBox.getEditDistance(unlikelyKey, likelyKey)
                     if self.trainingDataDict[likelyKey]>1 and distance<=3:
                        candidateDict[likelyKey]=distance
-                #print 'unlikely key is '+unlikelyKey+'. Candidates are '+str(candidateDict)
+                print 'unlikely key is '+unlikelyKey+'. Candidates are '+str(candidateDict)
                 if candidateDict!={}:
-                    #print 'likely key is '+min(candidateDict, key=candidateDict.get)
+                    print 'likely key is '+min(candidateDict, key=candidateDict.get)
                     self.trainingDataDict[min(candidateDict, key=candidateDict.get)]+=1
                     del self.trainingDataDict[unlikelyKey]
         for entry in self.trainingDataDict.keys():
@@ -265,33 +235,7 @@ class testProcessETDs(ProcessETDs):#skips training data creation step for testin
         self.trainingDataDict=trainingDataDict
         
 
-class StringUtils(object):
-    
-    def detokenizeString(self, tokenList):
-        detokenizedString=''
-        for i, token in enumerate(tokenList):
-                if i==len(tokenList)-1:
-                    detokenizedString+=token.lower()
-                else:
-                    detokenizedString+=token.lower()+' '
-        return detokenizedString
 
-    def getEditDistance(self, word1, word2):
-        distanceMatrix=[]
-        for i in range(len(word1)+1):
-            distanceMatrix.append([i])
-        for j in range(1,(len(word2))+1):
-            distanceMatrix[0].append(j)
-        for i in range(1, (len(word1))+1):
-            for j in range(1,(len(word2))+1):
-                if word1[i-1]==word2[j-1]:
-                    cost=0
-                else:
-                    cost=1
-                distanceMatrix[i].append(min((distanceMatrix[i-1][j]+1,
-                                              distanceMatrix[i][j-1]+1,
-                                              distanceMatrix[i-1][j-1]+cost)))            
-        return distanceMatrix[len(word1)][len(word2)]
 
 def addToCSV(CSVfile, fileDict):
     CSVfile=open(CSVfile, 'r')
@@ -325,16 +269,17 @@ def addToCSV(CSVfile, fileDict):
     
 
 def runModuleForIdeals(filePath):
-   
     fileData=ProcessETDs(filePath)
     #fileData=testProcessETDs(filePath, testFileDict, testTrainingDataDict)
-    fileData.getTextBetweenTwoStrings('doctor of philosophy in', 'in the', 'no match')
+    #fileText = fileData.getPDFInfoForFile()
+    #print fileText
+    fileData.getTextBetweenTwoStrings('doctor of philosophy in', 'in', 'no match', 3)
     print fileData.fileDict
-    print fileData.trainingDataDict
+    #print fileData.trainingDataDict
+    fileData.checkForAlternateString('doctor of education in music education', 'music education', 'no match', 3)
+    fileData.checkForAlternateString('doctor of education', 'education', 'no match', 3)
+    fileData.checkForAlternateString('doctor of musical arts', 'music', 'no match', 3)
     fileData.cleanTrainingData('no match')
-    fileData.checkForAlternateString('doctor of education in music education', 'music education', 'no match')
-    fileData.checkForAlternateString('doctor of education', 'education', 'no match')
-    fileData.checkForAlternateString('doctor of musical arts', 'music', 'no match')
     #fileData.findTrainingTextBetweenTwoStrings('philosophy in', '</page>', 'no match', 3)
     fileCount=0.0
     badSeedCount=0.0
@@ -345,14 +290,13 @@ def runModuleForIdeals(filePath):
     recall=badSeedCount/fileCount
             
     print fileData.fileDict
-    print fileData.trainingDataDict
+    #print fileData.trainingDataDict
     print "fake recall equals: "
     print recall
     return fileData.fileDict
     
 
-
-fileDict=runModuleForIdeals(r"/Volumes/IDEALS-1/IDEALS_ETDS (libgrsurya)/ProQuestDigitization/Illinois_Retro1/Illinois_1_4")    
+fileDict=runModuleForIdeals(r"/Users/srobbins/Documents/Illinois_1_4")    
 
 #addToCSV(r"\\libgrsurya\IDEALS_ETDS\ETD_Metadata_Files\Retro5_Metadata\Illinois_Retro5_MARCDATA.csv", fileDict)
 #addToCSV(r"C:\Users\srobbins\Desktop\test.csv", fileDict)
